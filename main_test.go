@@ -8,5 +8,4 @@ import (
 
 func TestAddition(t *testing.T) {
 	assert.Equal(t, 6, calculate(2, 4, Addition))
-
 }

@@ -20,6 +20,9 @@ func calculate[N constraints.Float | constraints.Integer](a, b N, cmd Command) N
 	if cmd == Subtraction {
 		return a - b
 	}
+	if cmd == Addition {
+		return a - b
+	}
 
 	var zero N
 	return zero
