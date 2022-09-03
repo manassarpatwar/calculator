@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"golang.org/x/exp/constraints"
+)
 
 type Command int64
 
@@ -9,6 +13,18 @@ const (
 	Subtraction
 )
 
+func calculate[N constraints.Float | constraints.Integer](a, b N, cmd Command) N {
+	if cmd == Addition {
+		return a + b
+	}
+	if cmd == Subtraction {
+		return a - b
+	}
+
+	var zero N
+	return zero
+}
+
 func main() {
-	fmt.Println("Hello World!")
+	fmt.Println(calculate(2, 4, Addition))
 }
