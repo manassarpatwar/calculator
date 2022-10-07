@@ -42,7 +42,28 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v2
-
+      - name: Generate Golang source hash base
+        id: hash-base
+        run: echo "::set-output name=value::${{ hashFiles('**/*.go','!vendor/**') }}"
+          - name: Cache base cover profile
+            id: cache-base
+            uses: actions/cache@v3
+            with:
+              path: cover-${{ steps.hash-base.outputs.value }}.profile
+              key: cover-profile-${{ steps.hash-base.outputs.value }}
+      - name: Generate Golang source hash head
+        if: github.event_name == 'pull_request'
+        id: hash-head
+        run: echo "::set-output name=value::${{ hashFiles('**/*.go','!vendor/**') }}"
+            - name: Cache head cover profile
+            if: |
+              github.event_name == 'pull_request' &&
+              steps.hash-base.outputs.value != steps.hash-head.outputs.value
+            id: cache-head
+            uses: actions/cache@v3
+            with:
+              path: cover-${{ steps.hash-head.outputs.value }}.profile
+              key: cover-profile-${{ steps.hash-head.outputs.value }}
       - name: Go cache
         uses: actions/cache@v2
         with:
@@ -69,16 +90,16 @@ jobs:
       - name: Run test for base code
         if: matrix.go-version == env.COV_GO_VERSION && env.RUN_BASE_COVERAGE == 'on' && steps.base-coverage.outputs.cache-hit != 'true' && github.event.pull_request.base.sha != ''
         run: |
-          git fetch origin main ${{ github.event.pull_request.base.sha }}
+          git fetch origin master ${{ github.event.pull_request.base.sha }}
           HEAD=$(git rev-parse HEAD)
           git reset --hard ${{ github.event.pull_request.base.sha }}
-          (make test-unit && go tool cover -func=./unit.coverprofile > unit-base.txt) || echo "No test-unit in base"
+          (go test -cover -coverprofile=unit.coverprofile && go tool cover -func=./unit.coverprofile > unit-base.txt) || echo "No test-unit in base"
           git reset --hard $HEAD
 
       - name: Test
         id: test
         run: |
-          make test-unit
+          go test -cover -coverprofile=unit.coverprofile
           go tool cover -func=./unit.coverprofile > unit.txt
           TOTAL=$(grep 'total:' unit.txt)
           echo "${TOTAL}"
@@ -88,7 +109,7 @@ jobs:
         id: annotate
         if: matrix.go-version == env.COV_GO_VERSION && github.event.pull_request.base.sha != ''
         run: |
-          git fetch origin main ${{ github.event.pull_request.base.sha }}
+          git fetch origin master ${{ github.event.pull_request.base.sha }}
           REP=$(go run . -cov unit.coverprofile -gha-annotations gha-unit.txt -exclude _testdata -delta-cov-file delta-cov-unit.txt -target-delta-cov ${TARGET_DELTA_COV})
           echo "${REP}"
           REP="${REP//$'\n'/%0A}"
