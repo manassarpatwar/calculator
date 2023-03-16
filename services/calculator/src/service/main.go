@@ -11,6 +11,7 @@ type Command int64
 const (
 	Addition Command = iota
 	Subtraction
+	Multiplication
 )
 
 func calculate[N constraints.Float | constraints.Integer](a, b N, cmd Command) N {
@@ -22,6 +23,9 @@ func calculate[N constraints.Float | constraints.Integer](a, b N, cmd Command) N
 	}
 	if cmd == Addition {
 		return a - b
+	}
+	if cmd == Multiplication {
+		return a * b
 	}
 
 	var zero N
